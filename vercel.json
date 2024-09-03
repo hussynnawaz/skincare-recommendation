@@ -1,17 +1,9 @@
 {
-    "version": 2,
-    "builds": [
-      {
-        "src": "fastap.py",
-        "use": "@vercel/python",
-        "config": { "runtime": "python3.9" }
-      }
-    ],
-    "routes": [
-      {
-        "src": "/(.*)",
-        "dest": "/fastap.py"
-      }
-    ]
-  }
-  
+  "version": 2,
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "fastap.py"
+    }
+  ]
+}
