@@ -1,11 +1,9 @@
 # fastapi_app.py
-
 import torch
 from torchvision import transforms
 from torchvision.models import resnet50, ResNet50_Weights
 from PIL import Image
 import numpy as np
-from deepface import DeepFace
 import pandas as pd
 from typing import Optional
 from fastapi import FastAPI, File, UploadFile, Form, Query
@@ -52,16 +50,16 @@ def predict_skin_type(img):
         out = model(img)
         return out.argmax(1).item()
 
-def predict_age(img_path):
-    analysis = DeepFace.analyze(img_path, actions=['age'], enforce_detection=False)
-    if isinstance(analysis, list):
-        return analysis[0]['age']
-    elif isinstance(analysis, dict):
-        return analysis['age']
-    else:
-        raise ValueError("Unexpected analysis result format")
+# def predict_age(img_path):
+#     analysis = DeepFace.analyze(img_path, actions=['age'], enforce_detection=False)
+#     if isinstance(analysis, list):
+#         return analysis[0]['age']
+#     elif isinstance(analysis, dict):
+#         return analysis['age']
+#     else:
+#         raise ValueError("Unexpected analysis result format")
 
-def recommend_products(skin_type, age, category, problems):
+def recommend_products(skin_type, category, problems):
     recommendations = product_df[
         (product_df['product_type'].str.contains(category, case=False)) &
         (product_df['skintype'].str.contains(skin_type, case=False)) &
@@ -83,17 +81,17 @@ async def predict(file: UploadFile = File(...), category: str = Form(...), probl
     img.save(img_path)
     
     # Predict age
-    age_prediction = predict_age(img_path)
+    # age_prediction = predict_age(img_path)
     
     # Get product recommendations
-    recommendations = recommend_products(skin_type, age_prediction, category, problems_list)
+    recommendations = recommend_products(skin_type, category, problems_list)
     
     # Format recommendations
     recommendations_list = recommendations.to_dict(orient='records')
     
     return JSONResponse(content={
         "skin_type": skin_type,
-        "age": age_prediction,
+        # "age": age_prediction,
         "recommendations": recommendations_list
     })
 
