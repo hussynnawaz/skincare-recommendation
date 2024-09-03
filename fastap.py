@@ -15,6 +15,11 @@ import re
 # Initialize FastAPI app
 app = FastAPI()
 
+
+@app.get("/")
+async def root():
+    return {"message": "Hello World"}
+
 # Load the product database
 file_path = 'export_skincare.csv'  # Update this path to the correct location
 product_df = pd.read_csv(file_path)
