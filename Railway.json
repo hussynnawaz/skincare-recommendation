@@ -1,0 +1,9 @@
+{
+    "builds": [
+      {
+        "src": "fastap.py",
+        "use": "@railway/python"
+      }
+    ]
+  }
+  
