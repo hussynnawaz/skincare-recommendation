@@ -3,6 +3,7 @@ from PIL import Image
 import torch
 from torchvision import transforms
 from torchvision.models import resnet50, ResNet50_Weights
+import pandas as pd
 
 app = Flask(__name__)
 
@@ -24,11 +25,33 @@ transform = transforms.Compose([
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
 
+# Load the product data from CSV
+products_df = pd.read_csv("products.csv")
+
 # Helper function to predict skin type
 def predict_skin_type(img):
     img = transform(img).unsqueeze(0).to(device)
     with torch.no_grad():
         return index_label[model(img).argmax(1).item()]
+
+# Helper function to provide product recommendations
+def get_product_recommendation(skin_type, category=None, problems=[]):
+    # Filter products based on skin type
+    filtered_products = products_df[products_df['skin_type'] == skin_type]
+
+    # Filter or modify recommendations based on category and problems
+    if category:
+        filtered_products = filtered_products[filtered_products['category'].str.contains(category, case=False, na=False)]
+
+    if problems:
+        filtered_products = filtered_products[filtered_products['problems'].apply(lambda x: any(problem.lower() in x.lower() for problem in problems))]
+
+    # If no products match the filters, return a fallback message
+    if filtered_products.empty:
+        return ["No suitable recommendations available."]
+
+    # Return the product names (you can adjust this based on what info you want to show)
+    return filtered_products['product_name'].tolist()
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -37,29 +60,35 @@ def predict():
         category = None
         problems = []
 
-        # Ensure that the 'image' field is included in the form data
-        if 'image' in request.files:  # Check for image file upload
+        # Check if image file is present
+        if 'image' in request.files:
             img = Image.open(request.files['image']).convert("RGB")
-            category = request.form.get('category')
-            problems_str = request.form.get('problems')
-            problems = problems_str.split(',') if problems_str else []
-
         else:
-            return jsonify({"error": "No image file provided."}), 400  # Image field missing
+            return jsonify({"error": "No image file provided."}), 400  # Image missing
+
+        # Optional: category and problems fields (category can be a string, problems a comma-separated list)
+        category = request.form.get('category', None)
+        problems_str = request.form.get('problems', '')
+        problems = problems_str.split(',') if problems_str else []
 
         if img is None:
-            return jsonify({"error": "No image provided."}), 400
+            return jsonify({"error": "No image provided."}), 400  # Invalid image
 
+        # Predict the skin type using the model
         skin_type = predict_skin_type(img)
+        
+        # Get the appropriate product recommendations based on skin type, category, and problems
+        recommendations = get_product_recommendation(skin_type, category, problems)
+
         return jsonify({
             "skin_type": skin_type,
             "category": category,
-            "problems": problems
+            "problems": problems,
+            "product_recommendations": recommendations
         })
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
