@@ -174,7 +174,7 @@ app.add_middleware(
 )
 
 # Load the product database
-file_path = 'export_skincare.csv'  # Update this path to the correct location
+file_path = 'export_skincare 1.csv'  # Update this path to the correct location
 product_df = pd.read_csv(file_path)
 
 # Load the best model
