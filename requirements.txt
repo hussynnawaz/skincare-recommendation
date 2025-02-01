@@ -1,6 +1,7 @@
-fastapi
+flask
+flask-cors
 torch
 torchvision
+pillow
+numpy
 pandas
-Pillow
-uvicorn
